@@ -1,0 +1,80 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+@model dynamic
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/microsoft/signalr/dist/browser/signalr.min.js"></script>
+<div>
+    <audio id="notify" src="/src/classic.mp3" preload="auto" controls="controls" style="display: none;"></audio>
+    <div id="box" style="display: none; height: 100%; overflow: hidden; padding: 10px;">
+        <div>消息纪录</div>
+        <div id="divresult" style="height: 600px; margin-top: 20px; width: 100%; overflow: auto; border: 1px solid">
+        </div>
+    </div>
+    <div id="divlogin" style="margin: 10px;">
+        <label>名称: </label>
+        <input type="text" id="name" />
+        <input type="button" id="login" value="登录" />
+    </div>
+    <div id="divmsg" style="margin: 10px; display: none">
+        <input type="text" id="message" multiple />
+        <input type="button" id="send" value="发送" />
+    </div>
+</div>
+<script>
+    var  serverurl = "@(ViewBag.serverurl)";
+    var hub = new signalR.HubConnectionBuilder()
+        .withUrl(serverurl)
+        .build();
+    hub.start();
+
+    //接收消息监听
+    hub.on("Receive",
+        x => {
+            var player = $("#notify")[0];
+            var temp = "";
+            temp += "<div style='color:red'>" + x.name + ": " + x.message + "</div>";
+            var date = new Date();
+            temp += date.getFullYear() + "." + (date.getMonth() + 1) + "." + date.getDate() + " " + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds();
+            temp += "<p></p>";
+            player.play();
+            $("#divresult").append(temp);
+            var xresult = $("#divresult")[0];
+            xresult.scrollTop = xresult.scrollHeight;
+        });
+
+    //登录
+    $("#login").on("click",
+        function() {
+            var name = $("#name").val().trim();
+            if (name && name.length > 0) {
+                $("#divlogin").hide();
+                $("#divmsg").show();
+                $("#box").show();
+            }
+        });
+
+    //发送消息
+    $("#send").on("click",
+        function() {
+            var msg = $("#message").val().trim();
+            var name = $("#name").val();
+            if (msg && msg.length > 0) {
+                var data = {
+                    name: name,
+                    message: msg
+                };
+                hub.invoke("Send", data);
+                var temp = "";
+                temp += "<div style='color:blue;'>" + name + ": " + msg + "</div>";
+                var date = new Date();
+                temp += date.getFullYear() + "." + (date.getMonth() + 1) + "." + date.getDate() + " " + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds();
+                temp += "<p></p>";
+                $("#divresult").append(temp);
+                var xresult = $("#divresult")[0];
+                xresult.scrollTop = xresult.scrollHeight;
+                $("#message").val("");
+            }
+        });
+
+</script>
