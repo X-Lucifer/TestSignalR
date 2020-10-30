@@ -1,0 +1,2 @@
+# TestSignalR
+asp.netcore signalr
